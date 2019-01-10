@@ -1,0 +1,16 @@
+#! /bin/bash
+
+# cd to /temp/torrents/filmes/3D
+# and call this script passing a folder name of a downloaded video as parameter
+# the folder should have been created with 'downloadYTS3D' and must have a br.srt and en.srt files inside
+# the download should have finished and the video will be fetched from /temp/torrents/downloading/$directory
+
+directory="$1"
+
+videoPath=`find "$directory" -name "*.mp4"`
+videoFile="${videoPath/*\//}"
+mkvVideoFile="${videoFile/.mp4/.mkv}"
+
+/root/repack_movie_with_subtitles "$videoPath" "$directory/en.srt" "$directory/br.srt" "${mkvVideoFile}"
+
+rm -fr $directory"

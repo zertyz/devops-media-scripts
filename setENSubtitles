@@ -1,0 +1,46 @@
+#! /bin/bash
+
+# symlinks */*.mp4 srt files to */en.srt
+find /temp/torrents/filmes/ -name '*.mp4' | while read l; do
+	s=${l/.mp4/}
+	enSRT=`echo "$l" | sed 's|\(.*\)/.*|\1/en.srt|'` 
+	brSRT=`echo "$l" | sed 's|\(.*\)/.*|\1/br.srt|'` 
+	ln -fv "$enSRT" "${s}.srt"
+	ln -fv "$enSRT" "${s}.en.srt"
+	ln -fv "$brSRT" "${s}.pt.srt"
+done
+
+# legacy
+cat >/dev/null <<END
+# rename legend files from "$lang.srt" to the pattern "$movieName.$lang.srt", so we don't need movie directories
+cd /temp/torrents/filmes
+for legendSuffix in "en.srt" "br.srt"; do
+	find -name "$legendSuffix" | while read originalLegendFile; do
+		echo "$originalLegendFile" | sed 's|\(.*\)/.*|\1|' | while read movieDirectory; do
+			videoFile=`find "$movieDirectory" -iname "*.mp4"`
+			if [ "$videoFile" != "" ]; then
+				desiredLegendFile=${videoFile/.mp4/.$legendSuffix}
+				mv -v "$originalLegendFile" "$desiredLegendFile"
+			fi
+		done
+	done
+done
+
+# remove movie directories, moving video and legend files to the same location
+for d in '/temp/torrents/filmes/1080p/' '/temp/torrents/filmes/3D/'; do
+	cd "$d"
+	echo "cd '$d'"
+	find . -maxdepth 1 -name "??*" -type d | while read movieDirectory; do
+		find "$movieDirectory" -iname "*.mp4" | while read videoFile; do
+			find "$movieDirectory" -iname "*.srt" -printf 'mv -v "%p" .; '
+			echo "mv -v \"$videoFile\" ."; echo "rm -fr \"$movieDirectory\""
+		done
+	done
+done >/tmp/cmds
+source /tmp/cmds
+
+# link "*.en.srt" to the corresponding "*.srt" files, making english the official legend for all movies that has multiple languages
+# (please note that there are some movies who only have one *.srt file -- those will not be touched)
+cd /temp/torrents/filmes
+find -name '*en.srt' | while read l; do s=${l/.en.srt/.srt}; ln -fv "$l" "$s"; done
+END

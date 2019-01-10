@@ -1,0 +1,3 @@
+#! /bin/bash
+
+exec /root/bin/downloadYTS 3D "$1"

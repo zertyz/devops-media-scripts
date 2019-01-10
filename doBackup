@@ -1,0 +1,8 @@
+#mv boot.tar.xz boot.tar.xz~
+#mv root.tar.xz root.tar.xz~
+#tar -cvJf boot.tar.xz --one-file-system /boot
+#tar -cvJf root.tar.xz --one-file-system /
+
+# find directories to backup with find / -mount -mtime -1 | less
+mv partial.tar.xz partial.tar.xz~
+tar -cvJf partial.tar.xz /etc /root /var/spool /var/lib /var/log

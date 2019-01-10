@@ -1,0 +1,1 @@
+(find -iname "*.mp4"; find -iname "*.avi"; find -iname "*.mkv") | while read f; do if [ -s "${f}.md5" ]; then echo "--> $f already hashed..."; else echo "Hashing $f..."; md5sum "${f}" >"${f}.md5"; fi; done; chown -fR transmission.users .; chmod -fR g+rwx .; 

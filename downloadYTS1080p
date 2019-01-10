@@ -1,0 +1,5 @@
+#! /bin/bash
+
+# download movies with while read u; do ~/bin/downloadYTS1080p "$u" && echo "$u" >>/raid0/tmp/yts/surelyDownloaded; done
+
+exec /root/bin/downloadYTS 1080p "$1"

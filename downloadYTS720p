@@ -1,0 +1,5 @@
+#! /bin/bash
+
+# download movies with: while read l; do u=`grep -Fxv -f /raid0/tmp/yts/surelyDownloaded <(echo "$l")`; if [ "$u" == "$l" ]; then echo "--> attempting to download $u in 1080p for the last time..." && /root/bin/downloadYTS1080p "$u" && echo "$u" >>/raid0/tmp/yts/surelyDownloaded || (echo "--> downloading 720p $u..." && /root/bin/downloadYTS720p "$u" && echo "$u" >>/raid0/tmp/yts/surelyDownloaded); else echo "--> skipping $l for it is on the list"; fi; done
+
+exec /root/bin/downloadYTS 720p "$1"

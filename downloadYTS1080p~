@@ -1,0 +1,58 @@
+#! /bin/bash
+
+URL="$1"
+
+cd /tmp
+
+function failure() {
+	echo " FAILED"
+	exit 1
+}
+
+function addTorrent() {
+	echo -en "Adding ${movieFileWithoutExtension} to the transmission download list..."
+	if transmission-remote localhost -n 'luiz:kesvta1!' --no-start-paused -a "torrent.torrent" -w "/temp/torrents/filmes/1080p" &>/dev/null; then
+		echo " OK"
+	else
+		failure
+	fi
+
+	# clean
+	rm movie.html subtitles.html torrent.torrent zip.zip
+}
+
+echo -en "Fetching torrent info..."
+curl "$URL" >movie.html 2>/dev/null && echo " OK" || failure
+
+# get the torrent file URL
+torrentURL=`cat movie.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*)"[^>]*>1080p</a>]], print)'`
+
+# get torrent directory & file name information
+echo -en "Downloading torrent file..."
+wget -O "torrent.torrent" "$torrentURL" &>/dev/null && echo " OK" || failure
+directory=`transmission-show torrent.torrent | grep -Ei "\.mp4|\.mkv" | sed 's|\s*\([^/]*\)/.*|\1|'`
+movieFileWithoutExtension=`transmission-show torrent.torrent | grep -Ei "\.mp4|\.mkv" | sed 's|.*/\(.*\)\.[Mm][KkPp][Vv4].*|\1|'`
+
+# find the subtitles urls
+subtitlesPage=`cat movie.html | lua -e 'a=io.read("*a") a:gsub([[.*<div class="tech%-spec%-info.*<a href="([^"]*)"[^>]*>Subtitles</a>]], print)'`
+echo -en "Downloading subtitles page..."
+curl "$subtitlesPage" >subtitles.html 2>/dev/null && echo " OK" || (echo -en " ERROR --> Downloading the torrent with original subs"; addTorrent)
+englishSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a class="subtitle%-page" href="([^"]*english[^"]*)">]], print)' | head -n 1`
+brazilianSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a class="subtitle%-page" href="([^"]*brazilian[^"]*)">]], print)' | head -n 1`
+
+# download subtitles
+echo -en "Downloading english subtitles..."
+URL="http://www.yifysubtitles.com/${englishSubRelativeLink/\/subtitles/subtitle}.zip"
+wget -O zip.zip "$URL" &>/dev/null && echo " OK" || failure
+unzip -p zip.zip '*.srt' >en.srt
+echo -en "Downloading brazilian subtitles..."
+URL="http://www.yifysubtitles.com/${brazilianSubRelativeLink/\/subtitles/subtitle}.zip"
+wget -O zip.zip "$URL" &>/dev/null && echo " OK" || failure
+unzip -p zip.zip '*.srt' >br.srt
+
+# place subtitles
+mkdir -p "/temp/torrents/filmes/1080p/$directory"
+chown -fR transmission.transmission "/temp/torrents/filmes/1080p/$directory"
+mv en.srt br.srt "/temp/torrents/filmes/1080p/$directory"
+
+addTorrent
