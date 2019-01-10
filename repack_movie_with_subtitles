@@ -1,0 +1,10 @@
+#! /bin/bash
+
+# given a portuguese and english subtitles, copies all the streams of the original video to a new mkv container, which allows subtitles to coexist
+
+invideo="$1"
+engsub="$2"
+pt_BRsub="$3"
+outvideo="$4"
+
+ffmpeg -i "${invideo}" -i "${engsub}" -i "${pt_BRsub}" -map 0 -codec copy -map 1 -codec copy -map 2 -codec copy -metadata:s:s:0 language=eng -metadata:s:s:1 language=pt-BR -y "$outvideo"
