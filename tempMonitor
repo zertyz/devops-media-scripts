@@ -15,7 +15,7 @@ while true; do
 
         sleep 300
         ((i++))
-        if ((i%3==0)); then
+        if ((i%4==0)); then
                 echo
         else
                 echo -en "\t"

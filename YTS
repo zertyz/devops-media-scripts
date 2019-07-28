@@ -1,0 +1,10 @@
+#! /bin/bash
+
+echo "This is script will download YTS movies in 3D, 1080p or 720p -- in that order"
+echo "Paste YTS movies here... CTRL-D if you ever which to leave..."
+while read url; do
+	for quality in 3D 1080p 720p; do
+		echo "## Attempting $quality download:"
+		/data/git/devops-media-scripts/downloadYTS "$quality" "$url" && break
+	done
+done

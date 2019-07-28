@@ -1,0 +1,47 @@
+#! /bin/bash
+# Transmission script post-process downloaded files
+
+
+##########################################################################################
+# Exported vars, as defined in https://github.com/transmission/transmission/wiki/Scripts #
+#                                                                                        #
+# TR_APP_VERSION                                                                         #
+# TR_TIME_LOCALTIME                                                                      #
+# TR_TORRENT_DIR                                                                         #
+# TR_TORRENT_HASH                                                                        #
+# TR_TORRENT_ID                                                                          #
+# TR_TORRENT_NAME                                                                        #
+#                                                                                        #
+##########################################################################################
+
+
+# The file for logging events from this script
+LOGFILE="/tmp/torrent.completed.log"
+
+function edate {
+	echo "`date '+%Y-%m-%d %H:%M:%S'`    $1" >> "$LOGFILE"
+}
+
+
+edate "__________________________NEW TORRENT FINI _______________________"
+edate "Version de transmission '$TR_APP_VERSION'"
+edate "Time '$TR_TIME_LOCALTIME'"
+edate "Directory is '$TR_TORRENT_DIR'"
+edate "Torrent Hash is '$TR_TORRENT_HASH'"
+edate "Torrent ID is '$TR_TORRENT_ID'"
+edate "Torrent name is '$TR_TORRENT_NAME'"
+
+###########################################################################################
+
+# set the subtitles for the movie, as downloaded by 'downloadYTS' script
+
+SUBTITLE="br.srt"		# portuguese, Brazil
+SUBTITLE_FALLBACK="en.srt"	# english, USA
+
+downloadDir="${TR_TORRENT_DIR}/${TR_TORRENT_NAME}"
+cd "${downloadDir}"
+movie=`echo *.mp4`
+movieName=${movie//.mp4/}
+edate "Setting subtitles in '${downloadDir}' to '${movieName}.srt'"
+cp -av "$SUBTITLE"          "${movieName}.srt" ||
+cp -av "$SUBTITLE_FALLBACK" "${movieName}.srt"
