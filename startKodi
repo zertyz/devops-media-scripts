@@ -1,0 +1,26 @@
+#! /bin/bash
+
+tail -F /root/.kodi/temp/kodi.log &
+
+# Procedure to redirect STDOUT and STDERR to a file: close streams, open stdout appending to a file, redirect stderr to stdout
+exec 1<&-
+exec 2<&-
+exec 1>>/tmp/kodi.service.log
+exec 2>&1
+
+# kodi -- starts only if we have 160M of gpu ram
+################################################
+# after exiting, waits for the TV to be turn back on before restarting
+if /opt/vc/bin/vcgencmd get_mem gpu | grep 'gpu=160M'; then
+	echo "## The right amount of GPU was detected. Entering kodi loop:"
+	while true; do
+		echo "## `date` -- Restarting kodi..."
+		echo 0 > /sys/class/vtconsole/vtcon1/bind
+		/usr/bin/fbset -g 4 2 4 2 32
+		/usr/lib/kodi/kodi-rbpi -fs --standalone
+		echo 1 > /sys/class/vtconsole/vtcon1/bind
+		echo "## `date` -- Kodi ended. Waiting for TV to be turned on again..."
+		# wait for TV to be turned on
+		cec-client 2>&1 | while read l; do if echo "$l" | grep "TV (0): power status changed from 'standby' to 'on'"; then break; fi; done
+	done
+fi
