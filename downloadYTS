@@ -17,6 +17,17 @@ function addTorrent() {
 	#if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" -w "${movieDir}" &>/dev/null; then
 	if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" &>/dev/null; then
 		echo " OK"
+		echo -en "\t --> remove unwanted files from the download:\n"
+		echo -en "\t 1) Waiting a little...\n"
+		sleep 0.1
+		echo -en "\t 2) Removing unwanted files: 0.27k's .srt and all .jpg's...\n"
+		torrentId=`transmission-remote localhost -n 'luiz:SmallPi1!' -l | grep -F "${directory}" | sed 's| *\([0-9]*\) .*|\1|'` &&
+		echo -en "\t\t 2.1) found torrent #${torrentId}\n" &&
+		excludedFiles=$(echo `transmission-remote localhost -n 'luiz:SmallPi1!' -t ${torrentId} -f | grep -E '\.jpg|0\.27 kB' | sed 's|:.*||'` | sed 's| |,|') &&
+		echo -en "\t\t 2.2) excluded files list is: [${excludedFiles}]\n" &&
+		echo -en "\t 3) Executing..." &&
+		transmission-remote localhost -n 'luiz:SmallPi1!' -t ${torrentId} -G${excludedFiles} &>/dev/null &&
+		echo " OK" || failure
 	else
 		failure
 	fi
