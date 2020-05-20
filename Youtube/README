@@ -1,0 +1,11 @@
+#! /bin/bash
+
+log=/data/Youtube/watched
+
+echo "Paste HERE the Youtube URLs you'd like to see on the TV -- they will be logged in '$log'"
+cat | while read u; do		# "cat |" before the loop assures stdin control won't go to any command (like wait)
+	echo "`date`: getting commands for '$u'" | tee -a "$log"
+	PLAY_CMD=`./GetPlayCommand "$u" </dev/null`
+	echo "`date`: queueing for playing..."
+	eval $PLAY_CMD
+done

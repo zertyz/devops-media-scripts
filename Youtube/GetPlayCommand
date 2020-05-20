@@ -1,0 +1,62 @@
+#! /bin/bash
+
+YOUTUBE_URL="$1"
+
+FORMATS=`youtube-dl --mark-watched -u luizcs -p 'qtbvar1!' -g --get-format --all-formats "${YOUTUBE_URL}" | sed -z 's|\([^\n]*\)\n\([0-9]*\)[^\n]*\n|f\2="\1";\n|g'` && eval "${FORMATS}" || exit
+
+
+# formats that use one url for video and other for audio require ffmpeg to join them
+
+# audio
+if [ -n "$f140" ]; then
+	AudioURL="$f140"	# aac
+else
+	AudioURL="$f251"	# webm
+fi
+
+# video
+if [ -n "$f137" ]; then
+	VideoURL="$f137"
+elif [ -z "$f22" ] && [ -n "$f135" ]; then	# format 22 (audio+video 720p mp4) is better than video format 135 (only video, 480p mp4)
+	VideoURL="$f135"
+fi
+
+if [ -n "$AudioURL" ] && [ -n "$VideoURL" ]; then
+cat <<END
+	echo "Waiting for ffmpeg's pid #\$FFMPEG_PID";
+	wait \$FFMPEG_PID &>/dev/null </dev/null;
+	ffmpeg -i "$VideoURL" -i "$AudioURL" -bufsize 16384k -c:v copy -c:a copy -f mp4 -movflags frag_keyframe+empty_moov - 2>/dev/null |
+	(dd bs=$((10240*1024)) count=1 iflag=fullblock 2>/dev/null; cat) |
+	(echo "Waiting for OMXPlayer's bash pid #\$OMX_PID" >&2; wait \$OMX_PID &>/dev/null </dev/null || sleep 15;
+	 pkill omxplayer.bin &>/dev/null;
+	 sleep 2;
+	 pkill -9 omxplayer.bin &>/dev/null;
+	 sleep 1;
+	 /usr/bin/fbset -g 4 2 4 2 24;
+	 omxplayer.bin --nativedeinterlace --vol -1500 --no-keys -r -o hdmi --hw --timeout 60 <(tee) &>/dev/null </dev/null ) &
+	OMX_PID=\$!;
+	sleep 2;
+	FFMPEG_PID=\`pgrep ffmpeg\`;
+END
+
+# formats that carry both video & audio on a single stream -- omxplayer can play them directly
+# (we could not find better options that carry video and audio on separate streams)
+else
+	if [ -n "$f22" ]; then
+		MP4URL="$f22"
+	elif [ -n "$f18" ]; then
+		MP4URL="$f18"
+	fi
+cat <<END
+	wait \$FFMPEG_PID &>/dev/null </dev/null;
+	wait \$OMX_PID &>/dev/null;
+	pkill omxplayer.bin &>/dev/null;
+	sleep 2;
+	pkill -9 omxplayer.bin &>/dev/null;
+	sleep 1;
+	/usr/bin/fbset -g 4 2 4 2 24;
+	omxplayer.bin -I -s --nativedeinterlace --vol -1500 --no-keys -r -o hdmi --hw --threshold 5 "$MP4URL" </dev/null &
+	OMX_PID=\$!;
+	FFMPEG_PID=$OMX_PID;
+END
+fi
