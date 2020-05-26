@@ -2,7 +2,7 @@
 
 YOUTUBE_URL="$1"
 
-FORMATS=`youtube-dl --mark-watched -u luizcs -p 'qtbvar1!' -g --get-format --all-formats "${YOUTUBE_URL}" | sed -z 's|\([^\n]*\)\n\([0-9]*\)[^\n]*\n|f\2="\1";\n|g'` && eval "${FORMATS}" || exit
+FORMATS=`youtube-dl --mark-watched -u <<user>> -p '<<passwd>>' -g --get-format --all-formats "${YOUTUBE_URL}" | sed -z 's|\([^\n]*\)\n\([0-9]*\)[^\n]*\n|f\2="\1";\n|g'` && eval "${FORMATS}" || exit
 
 
 # formats that use one url for video and other for audio require ffmpeg to join them
