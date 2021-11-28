@@ -15,7 +15,7 @@ function failure() {
 function addTorrent() {
 	echo -en "Adding ${movieFileWithoutExtension} to the transmission download list..."
 	#if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" -w "${movieDir}" &>/dev/null; then
-	if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" &>/dev/null; then
+	if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" --torrent-done-script "`dirname $0`/torrent_completed_script" &>/dev/null; then
 		echo " OK"
 		echo -en "\t --> remove unwanted files from the download:\n"
 		echo -en "\t 1) Waiting a little...\n"
@@ -51,19 +51,19 @@ movieFileWithoutExtension=`transmission-show _torrent.torrent | grep -Ei "\.mp4|
 
 # find the subtitles urls
 subtitlesPage=`lua -e 'a=io.read("*a") a:gsub([[<div class="tech%-spec%-info.*<a href="([^"]*)"[^>]*>Subtitles</a>]], print)' < movie.html`
-echo -en "\tApplying temporary subtitle URL fix... ${subtitlesPage} --> "
-subtitlesPage="${subtitlesPage//http:\/\/www.yifysubtitles.com/https:\/\/yts-subs.com}"; echo " ${subtitlesPage}: OK"	# temporary fix -- yifysubtitles.com is currently out
+	#echo -en "\tApplying temporary subtitle URL fix... ${subtitlesPage} --> "
+	#subtitlesPage="${subtitlesPage//https:\/\/yifysubtitles.org/https:\/\/yts-subs.com}"; echo " ${subtitlesPage}: OK"	# temporary fix -- yifysubtitles.com is currently out
 echo -en "Downloading subtitles page..."
 curl "$subtitlesPage" >subtitles.html 2>/dev/null && echo " OK" || (echo " ERROR --> Downloading the torrent with original subs"; addTorrent; exit 0)
 englishSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*english[^"]*)">]], print)' | head -n 1`
-brazilianSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*brazilian[^"]*)">]], print)' | head -n 1`
+brazilianSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*brazill?ian[^"]*)">]], print)' | head -n 1`
 
 # download subtitles
 echo -en "Downloading english subtitles..."
-URL="http://www.yifysubtitles.com/${englishSubRelativeLink/\/subtitles/subtitle}.zip"
+URL="https://yifysubtitles.org/${englishSubRelativeLink/\/subtitles/subtitle}.zip"
 wget -O zip.zip "$URL" &>/dev/null && echo " OK" && unzip -p zip.zip '*.srt' >en.srt || echo " NO ENGLISH SUBS??"
 echo -en "Downloading brazilian subtitles..."
-URL="http://www.yifysubtitles.com/${brazilianSubRelativeLink/\/subtitles/subtitle}.zip"
+URL="https://yifysubtitles.org/${brazilianSubRelativeLink/\/subtitles/subtitle}.zip"
 wget -O zip.zip "$URL" &>/dev/null && echo " OK" && unzip -p zip.zip '*.srt' >br.srt || echo " NO BRAZILIAN SUBS"
 
 movieDir="${MOVIES_DIR}/$directory"

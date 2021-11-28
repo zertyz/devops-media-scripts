@@ -35,15 +35,16 @@ edate "Torrent name is '$TR_TORRENT_NAME'"
 
 # set the subtitles for the movie, as downloaded by 'downloadYTS' script
 
-SUBTITLE="en.srt"		# portuguese, Brazil
-SUBTITLE_FALLBACK="br.srt"	# english, USA
+SUBTITLE="br.srt"		# portuguese, Brazil
+SUBTITLE_FALLBACK="en.srt"	# english, USA
 
 downloadDir="${TR_TORRENT_DIR}/${TR_TORRENT_NAME}"
 cd "${downloadDir}"
-movie=`echo *.mp4`
-movieName=${movie//.mp4/}
+movie=`echo *.[Mm][Pp]4`
+movieName=${movie//.[Mm][Pp]4/}
 edate "Setting subtitles in '${downloadDir}' to '${movieName}.srt'"
 cp -av "$SUBTITLE"          "${movieName}.srt" ||
 cp -av "$SUBTITLE_FALLBACK" "${movieName}.srt" ||
 cp -av Subs/English*.srt    "${movieName}.srt"
 chmod 444 "${movieName}.srt"
+chmod o+rwx "$TR_TORRENT_DIR/$TR_TORRENT_NAME"

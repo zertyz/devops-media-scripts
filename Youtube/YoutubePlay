@@ -1,0 +1,33 @@
+#! /bin/bash
+
+YOUTUBE_URL="$1"
+
+FORMATS=`youtube-dl --mark-watched -u luizcs -p 'qtbvar1!' -g --get-format --all-formats "${YOUTUBE_URL}" | sed -z 's|\([^\n]*\)\n\([0-9]*\)[^\n]*\n|f\2="\1";\n|g'` && eval "${FORMATS}" || exit
+
+
+# formats that use one url for video and other for audio require ffmpeg to join them
+if [ -n "$f137" ]; then
+	FFMPEG=true
+	MP4VideoURL="$f137"
+	if [ -n "$f140" ]; then
+		AudioURL="$f140"	# aac
+	else
+		AudioURL="$f251"	# webm
+	fi
+
+#	omxplayer.bin -I -s --nodeinterlace --no-keys -r -o hdmi --hw --timeout 60 --audio_queue 2 --video_queue 6        \
+#		<(ffmpeg -i "$MP4VideoURL" -i "$AudioURL" -c:v copy -c:a copy -f mp4 -movflags frag_keyframe+empty_moov - \
+#			| (dd bs=$((8192*1024)) iflag=fullblock count=1; cat) )
+
+	ffmpeg -i "$MP4VideoURL" -i "$AudioURL" -bufsize 8192k -c:v copy -c:a copy -f mp4 -movflags frag_keyframe+empty_moov - |
+	(sleep 10; pkill omxplayer.bin; sleep 2; pkill -9 omxplayer.bin; sleep 1;
+	 omxplayer.bin -I -s --nodeinterlace --no-keys -r -o hdmi --hw --timeout 60 --audio_queue 2 --video_queue 6 <(cat) )
+
+elif [ -n "$f22" ]; then
+	pkill omxplayer.bin
+	sleep 2
+	pkill -9 omxplayer.bin
+	sleep 1
+	MP4URL="$f22"
+	omxplayer.bin -I -s --nodeinterlace --no-keys -r -o hdmi --hw --threshold 5 "$MP4URL"
+fi
