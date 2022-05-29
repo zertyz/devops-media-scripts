@@ -1,0 +1,27 @@
+#! /bin/bash
+
+COMBATE='http://srv.vitrizamper.com:80/21979399780carolina/vfdkvg652/56'
+BAND='http://srv.vitrizamper.com:80/21979399780carolina/vfdkvg652/81594'
+
+CHANNEL_NAME="BAND"
+VARNAME="\${${CHANNEL_NAME}}"
+CHANNEL=`eval echo "${VARNAME}"`
+START="20220508_160000"
+FINISH="20220508_190000"
+RESTART_LIMIT_S=1800
+
+while sleep 1; do
+    dt=`date +%Y%m%d_%H%M%S`
+    if [[ "$dt" > "$START" ]] && [[ "$dt" < "$FINISH" ]]; then
+        echo "### STARTED RECORDING channel ${CHANNEL_NAME} AT `date` -- $dt -- ${CHANNEL}"
+        (sleep ${RESTART_LIMIT_S}; pkill ffmpeg) &
+        ffmpeg -i "${CHANNEL}" -acodec copy -vcodec copy ${CHANNEL_NAME}_${dt}.mp4
+        echo "### RECORDING PERIOD ENDED AT `date`"
+    elif [[ "$dt" > "$FINISH" ]]; then
+        echo "### RECORDING COMPLETE AT `date` -- $dt"
+        break
+    else
+        echo "### `date`: WAITING TO START RECORDING channel ${CHANNEL_NAME} AT $dt -- ${CHANNEL}"
+        sleep 15
+    fi
+done

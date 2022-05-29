@@ -2,36 +2,23 @@
 ## wget -O - -t 100 'http://lishd.com/zm8PhiUBa' | sed -z 's|\(#EXTINF[^\r]*\)\r\n\(http[^\r]*\)\r\n|\1\r\2\n|g' | grep -E ' FHD| ALT' | grep -v ' SD' | grep -v ' HD' | grep -v 'H265' | sort -k 3 -u | sed -z 's|\r|\n|g' | sed 's| FHD||g' | sed 's| ALT||g' | (echo '#EXTM3U'; cat) > m3u.m3u &&
 
 echo 'http://bit.ly/2epgPlexIptvBr' >epg.epg
-wget -O - -t 100 'http://lishd.com/VvWSNMfNv' | sed -z 's|\(#EXTINF[^\r]*\)\r\n\(http[^\r]*\)\r\n|\1\r\2\n|g' | grep -vF '.mp4' | grep -vF '24hs ' | sed -z 's|\r|\n|g' | (echo '#EXTM3U'; cat) > m3u.m3u &&
+wget -O - -t 100 'http://revendavitriz.com/ssiptv/get/21979399780carolina/vfdkvg652/list_lives/' | sed -z 's|\(#EXTINF[^\r]*\)\r\n\(http[^\r]*\)\r\n|\1\r\2\n|g' | grep -vF '.mp4' | grep -vF '24hs ' | sed -z 's|\r|\n|g' | (echo '#EXTM3U'; cat) > m3u.m3u &&
 scp -pr m3u.m3u epg.epg mutuatec@mutuatech.com:/home/mutuatec/public_html/ ||
 echo "Filtering & Upload process FAILED"
 
 cat >/dev/null <<EOF
 
-Neon P2P: http://abre.ai/neonp2p
+Link Encurtado
+✅ Link CURTO: http://enc.revendavitriz.com/YV9q4H0CV
 
-Segue seus dados de acesso:
-Usuário: 21979399780carolina
-Senha: dscffedf5796
-DNS: http://neonp2p.com:8080
-Lista M3U: http://lishd.com/VvWSNMfNv
-EPG: http://bit.ly/2epgPlexIptvBr
-STB: 51.15.190.140
-Lista SSIPTV: http://lishd.com/1k209roV8
+Link SSIPTV
+✅ SSIPTV: http://enc.revendavitriz.com/L5AiMByLA
 
-# OLD
-Usuário: 84067210ana
-Senha: fded1547858
-http://lishd.com/fOhuPuOkL
-
-
-# OLDER
-
-DNS:http://neonp2p.com:8080
-Lista M3U: http://lishd.com/zm8PhiUBa  # existe um outro com Uba
-EPG: http://bit.ly/2epgPlexIptvBr
-STB: 51.15.190.140
-SSIPTV: http://listhd.com/zpy9jtjoE
+XCiptv/Smarters
+DNS XCiptv: http://srv.vitrizamper.com
+DNS Smarters: http://s.vitrizamper.com
+✅Usuário: 21979399780carolina
+✅Senha: vfdkvg652
 
 site original: kaotus.com
 
