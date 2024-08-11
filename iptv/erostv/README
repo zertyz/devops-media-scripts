@@ -1,0 +1,4 @@
+echo 'http://painel.erost.xyz/ssiptv/get/00793583/87334280/list_lives/' >epg.epg
+wget -O m3u.m3u -t 100 'http://painel.erost.xyz/ssiptv/get/00793583/87334280/list_lives/'
+scp -pr m3u.m3u epg.epg mutuatec@mutuatech.com:/home/mutuatec/public_html/ ||
+echo "Filtering & Upload process FAILED"

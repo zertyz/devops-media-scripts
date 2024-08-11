@@ -40,8 +40,8 @@ SUBTITLE_FALLBACK="en.srt"	# english, USA
 
 downloadDir="${TR_TORRENT_DIR}/${TR_TORRENT_NAME}"
 cd "${downloadDir}"
-movie=`echo *.[Mm][Pp]4`
-movieName=${movie//.[Mm][Pp]4/}
+movie=`echo *.[Mm][Ppk][4v]`
+movieName=${movie//.[Mm][Ppk][4v]/}
 edate "Setting subtitles in '${downloadDir}' to '${movieName}.srt'"
 cp -av "$SUBTITLE"               "${movieName}.srt" ||
 cp -av "$SUBTITLE_FALLBACK"      "${movieName}.srt" ||

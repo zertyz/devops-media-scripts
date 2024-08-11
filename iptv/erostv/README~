@@ -1,0 +1,17 @@
+echo 'http://bit.ly/2epgPlexIptvBr' >epg.epg
+wget -O - -t 100 'http://enc.erost.xyz/9aNq' | sed -z 's|\(#EXTINF[^\r]*\)\r\n\(http[^\r]*\)\r\n|\1\r\2\n|g' | grep -vF '.mp4' | grep -vF '.mkv' | grep -vF '.avi' | sort -t , -k 2 >_
+cat _ | grep -vE 'DE: |ES: |AF: |CA-FR: |CA: |PT: |FR: |IT: |US: ' >_ONLY_BR
+cat _ONLY_BR >_GOOD_SORTING; cat _ | grep -E 'DE: |ES: |AF: |CA-FR: |CA: |PT: |FR: |IT: |US: ' >>_GOOD_SORTING
+cat _GOOD_SORTING | sed -z 's|\r|\n|g' | (echo '#EXTM3U'; cat) > m3u.m3u &&
+scp -pr m3u.m3u epg.epg mutuatec@mutuatech.com:/home/mutuatec/public_html/ ||
+echo "Filtering & Upload process FAILED"
+
+cat >/dev/null <<EOF
+
+Seu teste de 3 horas rápido foi criado com sucesso!
+Vencimento: 19/07/2022
+Link da Lista (M3u): http://enc.erost.xyz/9aNq
+Att. ErosTV.
+
+EOF
+

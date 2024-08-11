@@ -1,21 +1,26 @@
 #! /bin/bash
 
-QUALITY="$1"	# 3D, 1080p, 720p
+QUALITY="$1"	# 3D, 2160p, 1080p, 720p
 URL="$2"
 #MOVIES_DIR="/mnt/media/dlna/movies/$QUALITY"
-MOVIES_DIR="/mnt/media/dlna/movies"
+#MOVIES_DIR="/mnt/media/dlna/movies"
+MOVIES_DIR="/media/Completed"
 
-cd /tmp
+
+function cleanup() {
+	rm -f /tmp/Movie.html /tmp/subtitles.html /tmp/_torrent.torrent /tmp/zip.zip /tmp/en.srt /tmp/br.srt
+}
 
 function failure() {
 	echo " FAILED"
+	cleanup
 	exit 1
 }
 
 function addTorrent() {
 	echo -en "Adding ${movieFileWithoutExtension} to the transmission download list..."
-	#if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" -w "${movieDir}" &>/dev/null; then
-	if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "_torrent.torrent" --torrent-done-script "`dirname $0`/torrent_completed_script" &>/dev/null; then
+	#if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "/tmp/_torrent.torrent" -w "${movieDir}" &>/dev/null; then
+	if transmission-remote localhost -n 'luiz:SmallPi1!' --no-start-paused -a "/tmp/_torrent.torrent" --torrent-done-script "`dirname $0`/torrent_completed_script" &>/dev/null; then
 		echo " OK"
 		echo -en "\t --> remove unwanted files from the download:\n"
 		echo -en "\t 1) Waiting a little...\n"
@@ -31,46 +36,56 @@ function addTorrent() {
 	else
 		failure
 	fi
+	cleanup
+}
 
-	# clean
-	rm -f movie.html subtitles.html _torrent.torrent zip.zip
+function abort() {
+	echo "ABORTING: $1 -- saving to try again later in './yts.aborted'"
+	echo "$URL" >>./yts.aborted
+	cleanup
+	exit 1
 }
 
 echo -en "Fetching torrent info..."
-curl "$URL" >movie.html 2>/dev/null && echo " OK" || failure
+curl "$URL" >/tmp/movie.html 2>/dev/null && echo " OK" || failure
 
 # get the torrent file URL
-#torrentURL=`cat movie.html | lua -e "QUALITY='$QUALITY';"'a=io.read("*a") a:gsub([[<a href="([^"]*)"[^>]*>]]..QUALITY..[[</a>]], print)'`
-torrentURL=`lua -e "QUALITY='$QUALITY';"'a=io.read("*a") a:gsub([[<a href="([^"]*)"[^>]*>]]..QUALITY..[[[^<]*</a>]], print)' < movie.html | head -n 1`
+#torrentURL=`lua -e "QUALITY='$QUALITY';"'a=io.read("*a") a:gsub([[<a href="([^"]*)"[^>]*>]]..QUALITY..[[[^<]*</a>]], print)' < /tmp/movie.html | head -n 1`
+torrentURL=`lua -e "QUALITY='$QUALITY';"'a=io.read("*a") a:gsub([[<font[^>]*>[^<]*</font>]], ""):gsub([[<a href="([^"]*)"[^>]*>]]..QUALITY..[[.*]], print)' < /tmp/movie.html | head -n 1`
 
 # get torrent directory & file name information
 echo -en "Downloading torrent file..."
-wget -O "_torrent.torrent" "$torrentURL" &>/dev/null && echo " OK" || failure
-directory=`transmission-show _torrent.torrent | grep -Ei "\.mp4|\.mkv" | sed 's|\s*\([^/]*\)/.*|\1|'`
-movieFileWithoutExtension=`transmission-show _torrent.torrent | grep -Ei "\.mp4|\.mkv" | sed 's|.*/\(.*\)\.[Mm][KkPp][Vv4].*|\1|'`
+wget -O "/tmp/_torrent.torrent" "$torrentURL" &>/dev/null && echo " OK" || failure
+directory=`transmission-show /tmp/_torrent.torrent | grep -Ei "\.mp4|\.mkv" | sed 's|\s*\([^/]*\)/.*|\1|'`
+movieFileWithoutExtension=`transmission-show /tmp/_torrent.torrent | grep -Ei "\.mp4|\.mkv" | sed 's|.*/\(.*\)\.[Mm][KkPp][Vv4].*|\1|'`
 
 # find the subtitles urls
-subtitlesPage=`lua -e 'a=io.read("*a") a:gsub([[<div class="tech%-spec%-info.*<a href="([^"]*)"[^>]*>Subtitles</a>]], print)' < movie.html`
-	#echo -en "\tApplying temporary subtitle URL fix... ${subtitlesPage} --> "
-	#subtitlesPage="${subtitlesPage//https:\/\/yifysubtitles.org/https:\/\/yts-subs.com}"; echo " ${subtitlesPage}: OK"	# temporary fix -- yifysubtitles.com is currently out
+subtitlesPage=`lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*)" target="_blank" class="button" title="Download Subtitles.*]], print)' < /tmp/movie.html`
+#subtitlesPage=`lua -e 'a=io.read("*a") a:gsub([[<div class="tech%-spec%-info.*<a href="([^"]*)"[^>]*>Subtitles</a>]], print)' < /tmp/movie.html`
+	##echo -en "\tApplying temporary subtitle URL fix... ${subtitlesPage} --> "
+	##subtitlesPage="${subtitlesPage//https:\/\/yifysubtitles.org/https:\/\/yts-subs.com}"; echo " ${subtitlesPage}: OK"	# temporary fix -- yifysubtitles.com is currently out
 echo -en "Downloading subtitles page..."
-curl "$subtitlesPage" >subtitles.html 2>/dev/null && echo " OK" || (echo " ERROR --> Downloading the torrent with original subs"; addTorrent; exit 0)
-englishSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*english[^"]*)">]], print)' | head -n 1`
-brazilianSubRelativeLink=`cat subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*brazill?ian[^"]*)">]], print)' | head -n 1`
+curl "$subtitlesPage" >/tmp/subtitles.html 2>/dev/null && echo " OK" || (echo " ERROR --> Downloading the torrent with original subs"; addTorrent; exit 0)
+subtitlesDomain=`echo "$subtitlesPage" | sed 's|\(https://[^/]*\).*|\1|'`
+englishSubRelativeLink=`cat /tmp/subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*english[^"]*)">]], print)' | head -n 1`
+brazillianSubRelativeLink=`cat /tmp/subtitles.html | lua -e 'a=io.read("*a") a:gsub([[<a href="([^"]*brazill?ian[^"]*)">]], print) a:gsub([[<a href="([^"]*portuguese[^"]*)">]], print)' | head -n 1`
 
 # download subtitles
+englishSubLink=`echo ${englishSubRelativeLink} | sed "s|^/|$subtitlesDomain/|"`
+brazillianSubLink=`echo ${brazillianSubRelativeLink} | sed "s|^/|$subtitlesDomain/|"`
 echo -en "Downloading english subtitles..."
-URL="https://yifysubtitles.org/${englishSubRelativeLink/\/subtitles/subtitle}.zip"
-wget -O zip.zip "$URL" &>/dev/null && echo " OK" && unzip -p zip.zip '*.srt' >en.srt || echo " NO ENGLISH SUBS??"
-echo -en "Downloading brazilian subtitles..."
-URL="https://yifysubtitles.org/${brazilianSubRelativeLink/\/subtitles/subtitle}.zip"
-wget -O zip.zip "$URL" &>/dev/null && echo " OK" && unzip -p zip.zip '*.srt' >br.srt || echo " NO BRAZILIAN SUBS"
+sURL="${englishSubLink/\/subtitles/\/subtitle}.zip"
+wget -O /tmp/zip.zip "$sURL" &>/dev/null && echo " OK" && unzip -p /tmp/zip.zip '*.srt' >/tmp/en.srt || echo " NO ENGLISH SUBS??"
+echo -en "Downloading brazillian subtitles..."
+sURL="${brazillianSubLink/\/subtitles/\/subtitle}.zip"
+wget -O /tmp/zip.zip "$sURL" &>/dev/null && echo " OK" && unzip -p /tmp/zip.zip '*.srt' >/tmp/br.srt || abort "NO BRAZILLIAN SUBS"
 
 movieDir="${MOVIES_DIR}/$directory"
 
 # place subtitles
 mkdir -p "${movieDir}"
-chown -fR transmission.transmission "${movieDir}"
-mv en.srt br.srt "${movieDir}"
+mv /tmp/en.srt /tmp/br.srt "${movieDir}"
+chown -fR transmission:transmission "${movieDir}"
+chmod 777 "${movieDir}"
 
 addTorrent
